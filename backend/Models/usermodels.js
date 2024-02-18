@@ -33,9 +33,19 @@ const userSchema = new mongoose.Schema({
                 required:true
             }
         },
+        user: {
+            type: mongoose.Schema.ObjectId,
+            ref: "User",
+            required: true,
+           // refPath: '_userId' // Example assuming _id is named '_userId'
+          },
         role:{
             type:String,
             default:"user"
+        },
+        createdAt:{
+        type:Date,
+        default:Date.now()
         },
         resetpasswordToken:String,
         resetPasswordExpire:Date,
