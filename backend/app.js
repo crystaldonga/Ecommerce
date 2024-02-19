@@ -406,19 +406,23 @@ app.get("/admin/user/:id",auth,authorization,catchAsyncError(async(req,res,next)
    }))
    //update users role (admin)
    app.put("/admin/user/:id",auth,authorization,catchAsyncError(async(req,res,next)=>{
-    const newUserDate = {
-        // name:req.body.name,
-        // email:req.body.email,
-        role:req.body.role
+    console.log("update role")
+    console.log(req.params.id)
+    const newUserData = {
+        name: req.body.name,
+        email: req.body.email,
+        role: req.body.role,
+      };
     
-        };
-        const user =await User.findByIdAndUpdate(req.params.id,newUserDate,{
-            new:true
-        });
-        await user.save()
-        res.status(200).json({
-            sucess:true
-        })
+      await User.findByIdAndUpdate(req.params.id, newUserData, {
+        new: true,
+        runValidators: true,
+        useFindAndModify: false,
+      });
+    
+      res.status(200).json({
+        success: true,
+      });
    }))
    //delet user (admin)
    app.delete("/admin/user/:id",auth,authorization,catchAsyncError(async(req,res,next)=>{
@@ -426,10 +430,13 @@ app.get("/admin/user/:id",auth,authorization,catchAsyncError(async(req,res,next)
     if(!user){
         retur(next(res.status(400).send("user is not exits")))
     }
+    const imageId = user.avatar.public_id;
+    await cloudinary.v2.uploader.destroy(imageId);
    // await user.remove();
   await User.deleteOne({ _id: user._id })
     res.status(200).json({
-        sucess:true
+        success:true,
+        message:"deleted sucessfully"
     })
    }))
     //review and update productmodels.js
@@ -472,48 +479,63 @@ app.get("/admin/user/:id",auth,authorization,catchAsyncError(async(req,res,next)
     }))
     //get all review of a product
     app.get("/reviews",auth,catchAsyncError(async(req,res,next)=>{
-        const product = await Product.findById(req.query.productId);
+        console.log("js")
+        console.log(req.query.id);
+        const product = await Product.findById(req.query.id);
         console.log(product)
         if(!product){
             return(next(res.status(404).send("Product not found")))
         }
         res.status(200).json({
-            sucess:true,
+            success:true,
             reviews:product.reviews
         })
     }))
     //delet reviews
     app.delete("/reviews",auth,catchAsyncError(async(req,res,next)=>{
         const product = await Product.findById(req.query.productId)
+        console.log("product")
         console.log(product)
         if(!product){
             return(next(res.status(404).send("Product not found")))
         }
-        const reviews = product.reviews.filter((rev)=>{
-            rev._id.toString()!==req.query.id.toString()
-        })
-        console.log(reviews)
-        let avg=0;
-          reviews.forEach((rev)=>{
-            avg+=rev.rating
-        })
-        console.log(reviews)
+        const reviews = product.reviews.filter(
+            (rev) => rev._id.toString() !== req.query.id.toString()
+          );
         
-   const  ratings=avg/reviews.length
-       const numOfReviews=reviews.length;
-       await Product.findByIdAndUpdate(req.query.productId,{
-        reviews,
-        ratings,
-        numOfReviews,
-       }
-       ,{
-        new:true,
-        useFindANdModift:false
-    })
-
-       res.status(200).json({
-        sucess:true
-       })
+          let avg = 0;
+        
+          reviews.forEach((rev) => {
+            avg += rev.rating;
+          });
+        
+          let ratings = 0;
+        
+          if (reviews.length === 0) {
+            ratings = 0;
+          } else {
+            ratings = avg / reviews.length;
+          }
+        
+          const numOfReviews = reviews.length;
+        
+          await Product.findByIdAndUpdate(
+            req.query.productId,
+            {
+              reviews,
+              ratings,
+              numOfReviews,
+            },
+            {
+              new: true,
+              runValidators: true,
+              useFindAndModify: false,
+            }
+          );
+        
+          res.status(200).json({
+            success: true,
+          });
 
 
     }))
@@ -603,19 +625,21 @@ app.post("/order/new",auth,catchAsyncError(async(req,res,next)=>{
         if(!order){
             return(next(res.status(400).send("Order not found with this Id")))
            }
-        if(order.paymentInfo.orderStatus==="Deliverd"){
+        if(order.orderStatus==="Deliverd"){
             return(next("You have alredy deliverd this order"))
         }
+        if(req.body.status==="Shipped"){
         order.orderItems.forEach(async(o)=>{
             await updateStock(o.product,o.quantity);
         })
-        order.paymentInfo.orderStatus = req.body.status;
+    }
+        order.orderStatus = req.body.status;
         if(req.body.status=="Deliverd"){
             order.deliveredAt=Date.now()
         }
         await order.save({validateBeforeSave:false})
         res.status(200).json({
-            sucess:true,
+            success:true,
         })
     }))
         //delete order -------admin
