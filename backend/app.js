@@ -26,9 +26,7 @@ cloudinary.config({
     cloud_name:process.env.CLOUDINARY_NAME,
     api_key:process.env.CLOUDINARY_API_KEY,
     api_secret:process.env.CLOUDINARY_API_SECRET
-    // cloud_name:"dxxk4yqg6",
-    // api_key:"736744516528549",
-    // api_secret:"o7PJZSBoFqntSd9LTFYcZ04eolA"
+    
 
 
 })
@@ -184,10 +182,10 @@ const server=app.listen(process.env.PORT,(()=>{
 //console.log(youtube)
 //authentication
 app.post("/register",catchAsyncError(async(req,res,next)=>{
-   // console.log("hy")
+    console.log("hy")
     //console.log(process.env.CLOUDINARY_NAME)
-    //console.log(req.body.avatar)
-    //console.log(req.body)
+   // console.log(req.body.avatar)
+    console.log(req.body)
     let myCloud;
     try{
      myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
@@ -198,7 +196,7 @@ app.post("/register",catchAsyncError(async(req,res,next)=>{
     }catch(e){
       console.log(e)
     }
-      console.log(JSON.stringify(myCloud))
+     // console.log(JSON.stringify(myCloud))
     const {name,email,password} = req.body;
     const user = await User.create({
         name,email,password,
@@ -212,6 +210,7 @@ app.post("/register",catchAsyncError(async(req,res,next)=>{
     
    // token creation
    const token  = user.getJWTToken();
+   console.log(token);
    res.status(201).cookie("jwt",token,{
     expires:new Date(Date.now()+9000000000000),
     //secure:true
@@ -222,7 +221,7 @@ app.post("/register",catchAsyncError(async(req,res,next)=>{
   });
 }))
 
-app.post("/login",catchAsyncError(async(req,res,next)=>{
+app.post("/login",auth,catchAsyncError(async(req,res,next)=>{
      const {email,password} = req.body;
      console.log("sucessfully")
      if(!email || !password){

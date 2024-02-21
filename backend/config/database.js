@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
+const dotenv = require("dotenv")
+dotenv.config({path:"./config/config.env"})
 const database=(()=>{
-    mongoose.connect("mongodb://localhost:27017/Ecommerce").then(()=>{
+    mongoose.connect(process.env.DB_URL).then(()=>{
         console.log("connecting...")
     })
 })
